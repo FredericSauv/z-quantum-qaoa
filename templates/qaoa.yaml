@@ -48,6 +48,31 @@ spec:
       - name: hamiltonian
         path: /app/hamiltonian.json
 
+  - name: get_full_maxcut_hamiltonian
+    parent: generic-task
+    inputs:
+      parameters:
+      - name: command
+        value: python3 main_script.py
+      artifacts:
+      - name: graph
+        path: /app/graph.json
+      - name: main-script
+        path: /app/main_script.py
+        raw:
+          data: |
+            from zquantum.core.graph import load_graph
+            from zquantum.qaoa.maxcut import get_full_maxcut_hamiltonian
+            from qeopenfermion import save_qubit_operator
+            graph = load_graph('graph.json')
+            hamiltonian = get_full_maxcut_hamiltonian(graph)
+            save_qubit_operator(hamiltonian,'hamiltonian.json')
+    outputs:
+      artifacts:
+      - name: hamiltonian
+        path: /app/hamiltonian.json
+
+
   - name: solve-maxcut-by-exhaustive-search
     parent: generic-task
     inputs:

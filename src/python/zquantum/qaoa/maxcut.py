@@ -18,7 +18,7 @@ def get_maxcut_hamiltonian(graph):
     
     Returns:
         zquantum.core.qubitoperator.QubitOperator object describing the 
-        Hamiltonian.
+        Hamiltonian H = \sum_{<i,j>} w_{i,j} Z_i Z_j.
     """
 
     output = QubitOperator()
@@ -33,6 +33,37 @@ def get_maxcut_hamiltonian(graph):
         output += QubitOperator(ZZ_term_str, coeff)
     
     return output
+
+def get_full_maxcut_hamiltonian(graph):
+    """Converts a MAXCUT instance, as described by a weighted graph, to the corresponding
+    full Hamiltonian, i.e. 1 containing I terms, i.e. 2 such that its mean 
+    expected value = the maxcut value. It is a linear ransformation of the 
+    get_max_cut Hamiltonian: H_{full} = (H_{maxcut} - nb_edges) / 2
+    
+
+    Args:
+        graph (networkx.Graph): undirected weighted graph describing the MAXCUT 
+        instance.
+    
+    Returns:
+        zquantum.core.qubitoperator.QubitOperator object describing the 
+        Hamiltonian. H = \sum_{<i,j>} w_{i,j} (Z_i Z_j - I) / 2
+    """
+
+    output = QubitOperator()
+
+    nodes_dict = generate_graph_node_dict(graph)
+
+    for edge in graph.edges:
+        coeff = graph.edges[edge[0],edge[1]]['weight']
+        node_index1 = nodes_dict[edge[0]]
+        node_index2 = nodes_dict[edge[1]]
+        ZZ_term_str = 'Z' + str(node_index1) + ' Z' + str(node_index2)
+        output += QubitOperator(ZZ_term_str, coeff/2)
+        output -= QubitOperator('', coeff/2) # constant term, i.e I
+    
+    return output
+
 
 def get_solution_cut_size(solution, graph):
     """Compute the Cut given a partition of the nodes.
