@@ -33,6 +33,10 @@ spec:
       artifacts:
       - name: graph
         path: /app/graph.json
+      - name: scaling
+        value: "1.0"
+      - name: shifted
+        value: "False"
       - name: main-script
         path: /app/main_script.py
         raw:
@@ -41,31 +45,7 @@ spec:
             from zquantum.qaoa.maxcut import get_maxcut_hamiltonian
             from qeopenfermion import save_qubit_operator
             graph = load_graph('graph.json')
-            hamiltonian = get_maxcut_hamiltonian(graph)
-            save_qubit_operator(hamiltonian,'hamiltonian.json')
-    outputs:
-      artifacts:
-      - name: hamiltonian
-        path: /app/hamiltonian.json
-
-  - name: get-full-maxcut-hamiltonian
-    parent: generic-task
-    inputs:
-      parameters:
-      - name: command
-        value: python3 main_script.py
-      artifacts:
-      - name: graph
-        path: /app/graph.json
-      - name: main-script
-        path: /app/main_script.py
-        raw:
-          data: |
-            from zquantum.core.graph import load_graph
-            from zquantum.qaoa.maxcut import get_full_maxcut_hamiltonian
-            from qeopenfermion import save_qubit_operator
-            graph = load_graph('graph.json')
-            hamiltonian = get_full_maxcut_hamiltonian(graph)
+            hamiltonian = get_maxcut_hamiltonian(graph, scaling=scaling, shifted=shifted)
             save_qubit_operator(hamiltonian,'hamiltonian.json')
     outputs:
       artifacts:
