@@ -101,9 +101,9 @@ spec:
         raw:
           data: |
             import json      
-            with open('/app/optim-results.json', 'r') as f:
+            with open('optim-results.json', 'r') as f:
                 optim = json.load(f)
-            with open('/app/optim-params.json', 'r') as f:
+            with open('optim-params.json', 'r') as f:
                 params = json.load(f)
             json_string = json.dumps({'optim':optim, 'params':params})
             with open("output-parameter.txt", "w") as f:
