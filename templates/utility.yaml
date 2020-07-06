@@ -130,10 +130,10 @@ spec:
             index_best = numpy.argmin(cost_res)                  
             
             with open('optimization-results.json', "w") as f:
-                json.dump({{inputs.parameters.num}}[index_best], f)
+                json.dump({{inputs.parameters.list-optimization-results}}[index_best], f)
             
             with open('optimization-parameters.json', "w") as f:
-                json.dump({{inputs.parameters.num}}[index_best], f)
+                json.dump({{inputs.parameters.list-optimization-parameters}}[index_best], f)
              
     outputs:
       artifacts:
