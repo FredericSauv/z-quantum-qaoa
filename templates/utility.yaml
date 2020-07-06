@@ -85,22 +85,28 @@ spec:
 
 
 
-  - name: artifact-to-output-parameter
+  - name: optim-artifacts-to-output-parameter
     parent: generic-task
     inputs:
       parameters:
       - name: command
         value: python3 main_script.py
       artifacts:
-      - name: artifact
-        path: /app/artifact.json
+      - name: optim-results
+        path: /app/optim-results.json
+      - name: optim-parameters
+        path: /app/optim-parameters.json
       - name: main-script
         path: /app/main_script.py
         raw:
           data: |
-            import os, json        
-            with open('/app/artifact.json', "r") as f:
-                json_string = json.dumps(json.load(f))
+            import json      
+            from zquantum.core.circuit import load_circuit_template_params
+            from zquantum.optimizers.utils import load_optimization_results
+            
+            params = load_circuit_template_params('optim-parameters.json')
+            optim = load_optimization_results('optim-results.json')
+            json_string = json.dumps({'optim':optim, 'params':params})
             with open("output-parameter.txt", "w") as f:
                 f.write(json_string)
     outputs:
@@ -117,23 +123,22 @@ spec:
       - name: command
         value: python3 main_script.py
       - name: list-optimization-results
-      - name: list-optimization-parameters
       artifacts:
       - name: main-script
         path: /app/main_script.py
         raw:
           data: |
             import json, numpy
-            opt_res = [json.loads(opt) for opt in {{inputs.parameters.list-optimization-results}}]
-            opt_params = [json.loads(opt) for opt in {{inputs.parameters.list-optimization-parameters}}]
-            cost_res = [opt['fun'] in opt_res]
+            
+            opt_all = [json.loads(opt) for opt in '{{inputs.parameters.list-optimization-results}}']
+            cost_res = [opt['opt']['fun'] for opt in opt_all]
             index_best = numpy.argmin(cost_res)                  
             
             with open('optimization-results.json', "w") as f:
-                json.dump({{inputs.parameters.list-optimization-results}}[index_best], f)
+                json.dump(opt_all[index_best]['opt'], f)
             
             with open('optimization-parameters.json', "w") as f:
-                json.dump({{inputs.parameters.list-optimization-parameters}}[index_best], f)
+                json.dump(opt_all[index_best]['params'], f)
              
     outputs:
       artifacts:
