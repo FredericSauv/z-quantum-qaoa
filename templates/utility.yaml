@@ -99,9 +99,10 @@ spec:
         raw:
           data: |
             import os, json        
-            with open('/app/artifact.json', "r") as from, open("output-parameter.txt", "w") as to:
-                json_string = json.dumps(json.load(from))
-                to.write(json_string)
+            with open('/app/artifact.json', "r") as f:
+                json_string = json.dumps(json.load(f))
+            with open("output-parameter.txt", "w") as f:
+                f.write(json_string)
     outputs:
       parameters:
       - name: output-parameter       # name of output parameter
