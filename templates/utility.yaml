@@ -1,0 +1,108 @@
+spec:            
+  - name: initialize-global-best-cost
+    parent: generic-task
+    inputs:
+      parameters:
+      - name: init-value
+        value: "0."
+      - name: command
+        value: python3 main_script.py
+      artifacts:
+      - name: main-script
+        path: /app/main_script.py
+        raw:
+          data: |
+            import os, json                        
+
+            best-params = {}
+            best-params["schema"] = "dummy" 
+            with open("best-params.json",'w') as f:
+                f.write(json.dumps(best-params, indent=2))  
+            
+            best-optim = {}
+            best-optim["schema"] = "dummy" 
+            best-optim["fun"] = float({{inputs.parameters.init-value}})
+            with open("best-optim.json",'w') as f:
+                f.write(json.dumps(best-optim, indent=2))  
+    outputs:
+      artifacts:
+      - name: best-params
+        globalName: best-params
+        path: /app/best-params.json
+      - name: best-optim
+        globalName: best-optim
+        path: /app/best-optim.json    
+
+  - name: update-global-best-cost
+    parent: generic-task
+    inputs:
+      parameters:
+      - name: cost-value
+      - name: command
+        value: python3 main_script.py
+      artifacts:
+      - name: best-params
+        path: /app/best-params.json
+      - name: best-optim
+        path: /app/best-optim.json
+        
+      - name: optim-results
+        path: /app/current-optim.json
+      - name: optim-params
+        path: /app/current-params.json
+                
+      - name: main-script
+        path: /app/main_script.py
+        raw:
+          data: |
+            import os, json        
+            
+            with open('/app/current-optim.json', 'r') as f:
+                current_optim = json.load(f)
+            current_cost = current_optim['fun']
+            
+            with open('/app/best-optim.json', 'r') as f:
+                best_optim = json.load(f)
+            best_cost = best_optim['fun']
+            
+            if best_cost < current_cost:             
+                # update best optimization
+                with open("best-optim.json",'w') as f:
+                    f.write(json.dumps(current_optim, indent=2))
+                
+                # update best parameters
+                with open('/app/current-params.json', "r") as from, open("best-params.json", "w") as to:
+                    json.dump(from, to)
+    outputs:
+      artifacts:
+      - name: best-params
+        globalName: best-params
+        path: /app/best-params.json
+      - name: best-optim
+        globalName: best-optim
+        path: /app/best-optim.json
+
+
+
+  - name: artifact-to-output-parameter
+    parent: generic-task
+    inputs:
+      parameters:
+      - name: command
+        value: python3 main_script.py
+      artifacts:
+      - name: artifact
+        path: /app/artifact.json
+      - name: main-script
+        path: /app/main_script.py
+        raw:
+          data: |
+            import os, json        
+            with open('/app/artifact.json', "r") as from, open("output-parameter.txt", "w") as to:
+                json_string = json.dumps(json.load(from))
+                to.write(json_string)
+    outputs:
+      parameters:
+      - name: output-parameter       # name of output parameter
+        valueFrom:
+          path: /app/output-parameter.txt
