@@ -141,7 +141,7 @@ spec:
             with open('optimization-results.json', "w") as f:
                 json.dump(opt_all[index_best]['optim'], f)
             
-            with open('optimization-parameters.json', "w") as f:
+            with open('optimizated-parameters.json', "w") as f:
                 json.dump(opt_all[index_best]['params'], f)
              
     outputs:
