@@ -101,7 +101,7 @@ spec:
       parameters:
       - name: parameter       # name of output parameter
         valueFrom:
-          jsonPath: /app/artifact.json
+          path: /app/artifact.json
 
   - name: optim-artifacts-to-output-parameter
     parent: generic-task
