@@ -1,5 +1,6 @@
 spec:
   templates:            
+  # TO FINISH
   - name: initialize-global-best-cost
     parent: generic-task
     inputs:
@@ -34,6 +35,7 @@ spec:
         globalName: best-optim
         path: /app/best-optim.json    
 
+  # TO FINISH
   - name: update-global-best-cost
     parent: generic-task
     inputs:
@@ -83,6 +85,7 @@ spec:
         globalName: best-optim
         path: /app/best-optim.json
 
+  # OK
   - name: artifact-to-parameter
     parent: generic-task
     inputs:
@@ -103,6 +106,7 @@ spec:
         valueFrom:
           path: /app/artifact.json
 
+  # TO DEPRECIATE
   - name: optim-artifacts-to-output-parameter
     parent: generic-task
     inputs:
@@ -135,7 +139,7 @@ spec:
         valueFrom:
           path: /app/output-parameter.json
 
-
+  # TO DEPRECIATE
   - name: get-best-optim
     parent: generic-task
     inputs:
@@ -168,3 +172,59 @@ spec:
         path: /app/optimization-results.json
       - name: optimized-parameters
         path: /app/optimized-parameters.json
+
+  # TO FINISH
+  - name: get-best-optim-from-list
+    parent: generic-task
+    inputs:
+      parameters:
+      - name: command
+        value: python3 main_script.py
+      - name: list-optimization-results
+      artifacts:
+      - name: main-script
+        path: /app/main_script.py
+        raw:
+          data: |
+            import json, numpy
+            # read the nested sttructure
+            opt_results = [json.loads(data['optimization-result']) for data in {{inputs.parameters.list-optimization-results}}]
+            opt_params = [json.loads(data['optimized-parameters']) for data in {{inputs.parameters.list-optimization-results}}]
+            opt_values = [opt['opt_value'] for opt in opt_results]
+            index_best = numpy.argmin(opt_values)                  
+            
+            with open('best-optimization-results.json', "w") as f:
+                json.dump(opt_results[index_best], f)
+            
+            with open('best-optimized-parameters.json', "w") as f:
+                json.dump(opt_params[index_best], f)
+             
+    outputs:
+      artifacts:
+      - name: best-optimization-results
+        path: /app/best-optimization-results.json
+      - name: best-optimized-parameters
+        path: /app/best-optimized-parameters.json
+        
+        
+  # TO TEST
+  - name: gen-number-list
+    parent: generic-task
+    inputs:  
+      parameters:
+      - name: command
+        value: python3 main_script.py
+      - name: number
+      artifacts:
+      - name: main-script
+        path: /app/main_script.py
+        raw:
+          data: |
+            import json      
+            with open("list-parameters.json", "w") as f:
+                json.dump(list(range({{inputs.parameters.number}})), f)
+    outputs:
+      parameters:
+      - name: list-parameters       
+        valueFrom:
+          path: /app/list-parameters.json
