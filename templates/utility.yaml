@@ -136,7 +136,7 @@ spec:
             # read the nested sttructure
             opt_all = [json.loads(data['{{inputs.parameters.name-list-elements}}']) for data in {{inputs.parameters.list-optimization-results}}]            
             opt_values = [opt['optim']['opt_value'] for opt in opt_all]
-            index_best = numpy.argmin(cost_res)                  
+            index_best = numpy.argmin(opt_values)                  
             
             with open('optimization-results.json', "w") as f:
                 json.dump(opt_all[index_best]['optim'], f)
