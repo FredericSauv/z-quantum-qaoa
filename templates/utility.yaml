@@ -125,19 +125,21 @@ spec:
       - name: command
         value: python3 main_script.py
       - name: list-optimization-results
+      - name: name-list-elements
+        default: "optim-as-output-parameter"
       artifacts:
       - name: main-script
         path: /app/main_script.py
         raw:
           data: |
             import json, numpy
-            
-            opt_all = [json.loads(opt) for opt in {{inputs.parameters.list-optimization-results}}]
-            cost_res = [opt['opt']['fun'] for opt in opt_all]
+            # read the nested sttructure
+            opt_all = [json.loads(data[{{name-list-elements}}]) for data in {{inputs.parameters.list-optimization-results}}]            
+            opt_values = [opt['optim']['opt_value'] for opt in opt_all]
             index_best = numpy.argmin(cost_res)                  
             
             with open('optimization-results.json', "w") as f:
-                json.dump(opt_all[index_best]['opt'], f)
+                json.dump(opt_all[index_best]['optim'], f)
             
             with open('optimization-parameters.json', "w") as f:
                 json.dump(opt_all[index_best]['params'], f)
