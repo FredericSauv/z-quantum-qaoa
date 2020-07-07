@@ -132,7 +132,7 @@ spec:
           data: |
             import json, numpy
             
-            opt_all = [json.loads(opt) for opt in '{{inputs.parameters.list-optimization-results}}']
+            opt_all = [json.loads(opt) for opt in {{inputs.parameters.list-optimization-results}}]
             cost_res = [opt['opt']['fun'] for opt in opt_all]
             index_best = numpy.argmin(cost_res)                  
             
