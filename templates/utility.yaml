@@ -103,16 +103,19 @@ spec:
             import json      
             with open('optim-results.json', 'r') as f:
                 optim = json.load(f)
+                assert type(optim) is dict
             with open('optim-parameters.json', 'r') as f:
                 params = json.load(f)
-            json_string = json.dumps({'optim':optim, 'params':params})
-            with open("output-parameter.txt", "w") as f:
-                f.write(json_string)
+                assert type(optim) is dict
+            # json_string = json.dumps({'optim':optim, 'params':params})
+            with open("output-parameter.json", "w") as f:
+            #     f.write(json_string)
+                json.dump({'optim':optim, 'params':params}, f)
     outputs:
       parameters:
       - name: output-parameter       # name of output parameter
         valueFrom:
-          path: /app/output-parameter.txt
+          path: /app/output-parameter.json
 
 
   - name: get-best-optim
