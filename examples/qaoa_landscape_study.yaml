@@ -6,12 +6,12 @@ resources:
   type: git
   parameters:
     url: "git@github.com:fredericsauv/z-quantum-core.git"
-    branch: "master"
+    branch: "studies"
 - name: z-quantum-qaoa
   type: git
   parameters:
     url: "git@github.com:fredericsauv/z-quantum-qaoa.git"
-    branch: "master"
+    branch: "landscape"
 - name: z-quantum-optimizers
   type: git
   parameters:
@@ -29,13 +29,13 @@ resources:
     branch: "master"
 
 metadata:
-  generateName: qaoa-landscape
+  generateName: qaoa-landscape-
 
-
+# 
 # For P = 1 generate grid of parameters and evaluate the ansatz for these 
 # parameters
 spec:
-  entrypoint: main
+  entrypoint: many-landscapes
   arguments:
     parameters:
     - s3-bucket: quantum-engine
@@ -44,33 +44,56 @@ spec:
     - docker-tag: latest
 
   templates:
-  - name: main
+  - name: many-landscapes
+  
     steps:
-
-    # generate a graph 
-    - - name: generate-graph
-        template: generate-regular-graph
+    - - name: one-landscape
+        template: one-landscape-from-graph-specs
         arguments:
           parameters:
-            - n-nodes: "10"
-            - degre: "3"
+            - graph-specs: "{{item}}"
+        withItems:
+        - "{'type':'erdos_renyi','num_nodes':16,'random_weights':False,'probability':0.3}"
+        - "{'type':'erdos_renyi','num_nodes':16,'random_weights':False,'probability':0.5}"
+        - "{'type':'erdos_renyi','num_nodes':16,'random_weights':False,'probability':0.8}"
+        - "{'type':'regular','num_nodes':16,'random_weights':False,'degree':3}"
+        - "{'type':'regular','num_nodes':16,'random_weights':False,'degree':9}"
+        - "{'type':'complete','num_nodes':16,'random_weights':False}"
+        - "{'type':'complete','num_nodes':16,'random_weights':True}"
+
+
+  
+  - name: one-landscape-from-graph-specs
+    inputs:
+      parameters:
+      - name: graph-specs
+  
+    steps:
+  # generate a graph according to specs
+    - - name: generate-graph-from-specs
+        template: generate-graph-from-specs
+        arguments:
+          parameters:
+            - graph-specs: "{{inputs.parameters.graph-specs}}"
             - resources: [z-quantum-core]
             - docker-image: "{{workflow.parameters.docker-image}}"
             - docker-tag: "{{workflow.parameters.docker-tag}}"
-    
-    # transform into an Hamiltonian
+  
+  # transform into an Hamiltonian (ok)
     - - name: get-maxcut-hamiltonian
-        template: get-maxcut-hamiltonian
+        template: get-maxcut-hamiltonian 
         arguments:
           parameters:
           - resources: [z-quantum-core, qe-openfermion, z-quantum-qaoa]
           - docker-image: "{{workflow.parameters.docker-image}}"
           - docker-tag: "{{workflow.parameters.docker-tag}}"
+          - scaling: "0.5"
+          - shifted: "True"
           artifacts:
           - graph:
-              from: '{{steps.generate-graph.outputs.artifacts.graph}}'
-              
-    # build ansatz
+              from: '{{steps.generate-graph-from-specs.outputs.artifacts.graph}}'
+            
+  # build ansatz (ok)
     - - name: build-circuit-template
         template: build-farhi-qaoa-circuit-template
         arguments:
@@ -81,52 +104,37 @@ spec:
           artifacts:
           - hamiltonian:
               from: '{{steps.get-maxcut-hamiltonian.outputs.artifacts.hamiltonian}}'
-              
-    # generate parameters (later grid)
-    - - name: generate-random-ansatz-params
-        template: generate-random-ansatz-params
+            
+    # generate parameter-grid (ok)
+    - - name: build-uniform-parameter-grid
+        template: build-custom-uniform-parameter-grid
         arguments:
           parameters:
-          - min-val: "0."
-          - max-val: "3.14"
           - n-layers: "1"
+          - list-min-value: "[0., 0.]"
+          - list-max-value: "[6.28, 3.14]"
+          - list-step: "[0.1, 0.1]"
           - resources: [z-quantum-core]
           - docker-image: "{{workflow.parameters.docker-image}}"
           - docker-tag: "{{workflow.parameters.docker-tag}}"
           artifacts:
           - ansatz:
               from: '{{steps.build-circuit-template.outputs.artifacts.ansatz}}'
-                  
-     # - - name: build-uniform-parameter-grid
-     #    template: build-uniform-parameter-grid
-     #    arguments:
-     #      parameters:
-     #      - n-layers: "1"
-     #      - min-value: "0"
-     #      - max-value: "3.14159265359+0.05" # to be changed to allow finer details
-     #      - step: "0.1047197551"
-     #      - resources: [z-quantum-core]
-     #      - docker-image: "{{workflow.parameters.docker-image}}"
-     #      - docker-tag: "{{workflow.parameters.docker-tag}}"
-     #      artifacts:
-     #      - ansatz:
-     #          from: '{{steps.build-circuit-template.outputs.artifacts.ansatz}}'
-   
-   # compute the cost for these parameters
-    - - name: evaluate-ansatz-from-params ## To write
-        template: compute-cost
+
+   # compute the cost for the grid (ok)
+    - - name: evaluate-ansatz-from-params 
+        template: compute-cost-for-grid
         arguments:
           parameters:
           - backend-specs: "{'module_name': 'qeqhipster.simulator', 'function_name': 'QHipsterSimulator'}"
-          - resources: [z-quantum-core, qe-openfermion, z-quantum-optimizers, qe-qhipster, z-quantum-qaoa]
+          - resources: [z-quantum-core, qe-openfermion, qe-qhipster, z-quantum-qaoa]
           - docker-image: qe-qhipster
           - docker-tag: latest
           artifacts:
           - ansatz: 
               from: '{{steps.build-circuit-template.outputs.artifacts.ansatz}}'
-          - parameters:
-              from: '{{steps.generate-random-ansatz-params.outputs.artifacts.params}}'
+          - parameter-grid:
+              from: '{{steps.build-uniform-parameter-grid.outputs.artifacts.parameter-grid}}'
           - qubit-operator:
               from: '{{steps.get-maxcut-hamiltonian.outputs.artifacts.hamiltonian}}'
-              
-  
+            
